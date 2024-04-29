@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HBNB Filters</title>
+    <link rel="stylesheet" href="/static/styles/3-header.css" type="text/css">
+    <link rel="stylesheet" href="/static/styles/3-footer.css" type="text/css">
+    <link rel="stylesheet" href="/static/styles/4-common.css" type="text/css">
+    <link rel="stylesheet" href="/static/styles/6-filters.css" type="text/css">
+</head>
+<body>
+    <header class="clearfix">
+        <div class="logo">
+            <img src="/static/images/logo.png" alt="Logo">
+            <h1>HBNB</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#">Places</a></li>
+                <li><a href="#">Sign Up</a></li>
+                <li><a href="#">Log In</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="container">
+        <section class="filters">
+            <h1>Places</h1>
+            <div class="filter">
+                <h3>States</h3>
+                <div class="popover">
+                    {% for state in states %}
+                        <input type="checkbox" name="states" id="{{ state.id }}" value="{{ state.id }}">
+                        <label for="{{ state.id }}">{{ state.name }}</label><br>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="filter">
+                <h3>Cities</h3>
+                <div class="popover">
+                    {% for city in cities %}
+                        <input type="checkbox" name="cities" id="{{ city.id }}" value="{{ city.id }}">
+                        <label for="{{ city.id }}">{{ city.name }}</label><br>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="filter">
+                <h3>Amenities</h3>
+                <div class="popover">
+                    {% for amenity in amenities %}
+                        <input type="checkbox" name="amenities" id="{{ amenity.id }}" value="{{ amenity.id }}">
+                        <label for="{{ amenity.id }}">{{ amenity.name }}</label><br>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </div>
+    <footer>
+        <p>Footer</p>
+    </footer>
+</body>
+</html>
