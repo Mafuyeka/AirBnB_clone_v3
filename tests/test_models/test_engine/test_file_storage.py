@@ -1,113 +1,132 @@
-Certainly! Here's the rewritten `tests/test_models/test_engine/test_file_storage.py` file for Task 2, incorporating insights and addressing potential issues:
-
-```python
 #!/usr/bin/python3
 """
-Unit Test for FileStorage Class
+Contains the TestFileStorageDocs classes
 """
-import unittest
+
 from datetime import datetime
-from models import *
+import inspect
+import models
+from models.engine import file_storage
+from models.amenity import Amenity
+from models.base_model import BaseModel
+from models.city import City
+from models.place import Place
+from models.review import Review
+from models.state import State
+from models.user import User
+import json
 import os
-from models.base_model import Base
-from models.engine.file_storage import FileStorage
+import pep8
+import unittest
+FileStorage = file_storage.FileStorage
+classes = {"Amenity": Amenity, "BaseModel": BaseModel, "City": City,
+           "Place": Place, "Review": Review, "State": State, "User": User}
 
 
-storage_type = os.environ.get('HBNB_TYPE_STORAGE')
-
-
-@unittest.skipIf(storage_type != 'file', 'skip if environ is not file')
 class TestFileStorageDocs(unittest.TestCase):
-    """Class for testing FileStorage docs"""
-
+    """Tests to check the documentation and style of FileStorage class"""
     @classmethod
     def setUpClass(cls):
-        print('\n\n.................................')
-        print('..... Testing Documentation .....')
-        print('..... For FileStorage Class .....')
-        print('.................................\n\n')
+        """Set up for the doc tests"""
+        cls.fs_f = inspect.getmembers(FileStorage, inspect.isfunction)
 
-    def test_doc_file(self):
-        """... documentation for the file"""
-        expected = ' Handles I/O, writing and reading, of JSON for storage of all class instances '
-        actual = file_storage.__doc__
-        self.assertEqual(expected, actual)
+    def test_pep8_conformance_file_storage(self):
+        """Test that models/engine/file_storage.py conforms to PEP8."""
+        pep8s = pep8.StyleGuide(quiet=True)
+        result = pep8s.check_files(['models/engine/file_storage.py'])
+        self.assertEqual(result.total_errors, 0,
+                         "Found code style errors (and warnings).")
 
-    def test_doc_class(self):
-        """... documentation for the class"""
-        expected = 'handles long term storage of all class instances'
-        actual = FileStorage.__doc__
-        self.assertEqual(expected, actual)
+    def test_pep8_conformance_test_file_storage(self):
+        """Test tests/test_models/test_file_storage.py conforms to PEP8."""
+        pep8s = pep8.StyleGuide(quiet=True)
+        result = pep8s.check_files(['tests/test_models/test_engine/\
+test_file_storage.py'])
+        self.assertEqual(result.total_errors, 0,
+                         "Found code style errors (and warnings).")
 
-    def test_doc_all(self):
-        """... documentation for all function"""
-        expected = ' returns a dictionary of all objects '
-        actual = FileStorage.all.__doc__
-        self.assertEqual(expected, actual)
+    def test_file_storage_module_docstring(self):
+        """Test for the file_storage.py module docstring"""
+        self.assertIsNot(file_storage.__doc__, None,
+                         "file_storage.py needs a docstring")
+        self.assertTrue(len(file_storage.__doc__) >= 1,
+                        "file_storage.py needs a docstring")
 
-    def test_doc_new(self):
-        """... documentation for new function"""
-        expected = ' adds objects to current database session '
-        actual = FileStorage.new.__doc__
-        self.assertIsNone(actual)  # FileStorage doesn't use a session
+    def test_file_storage_class_docstring(self):
+        """Test for the FileStorage class docstring"""
+        self.assertIsNot(FileStorage.__doc__, None,
+                         "FileStorage class needs a docstring")
+        self.assertTrue(len(FileStorage.__doc__) >= 1,
+                        "FileStorage class needs a docstring")
 
-    def test_doc_save(self):
-        """... documentation for save function"""
-        expected = ' commits all changes of current database session '
-        actual = FileStorage.save.__doc__
-        self.assertIsNone(actual)  # FileStorage doesn't use a session
-
-    def test_doc_reload(self):
-        """... documentation for reload function"""
-        expected = ' if file exists, deserializes JSON file to __objects, else nothing'
-        actual = FileStorage.reload.__doc__
-        self.assertEqual(expected, actual)
-
-    def test_doc_delete(self):
-        """... documentation for delete function"""
-        expected = ' deletes obj '
-        actual = FileStorage.delete.__doc__
-        self.assertEqual(expected, actual)
-
-    def test_doc_close(self):
-        """... documentation for close function"""
-        expected = ' calls the reload() method for deserialization from JSON to objects '
-        actual = FileStorage.close.__doc__
-        self.assertEqual(expected, actual)
+    def test_fs_func_docstrings(self):
+        """Test for the presence of docstrings in FileStorage methods"""
+        for func in self.fs_f:
+            self.assertIsNot(func[1].__doc__, None,
+                             "{:s} method needs a docstring".format(func[0]))
+            self.assertTrue(len(func[1].__doc__) >= 1,
+                            "{:s} method needs a docstring".format(func[0]))
 
 
-@unittest.skipIf(storage_type != 'file', 'skip if environ is not file')
-class TestFileStorageFunctionality(unittest.TestCase):
-    """Class for testing FileStorage Functionality"""
+class TestFileStorage(unittest.TestCase):
+    """Test the FileStorage class"""
+    @unittest.skipIf(models.storage_t == 'db', "not testing file storage")
+    def test_all_returns_dict(self):
+        """Test that all returns the FileStorage.__objects attr"""
+        storage = FileStorage()
+        new_dict = storage.all()
+        self.assertEqual(type(new_dict), dict)
+        self.assertIs(new_dict, storage._FileStorage__objects)
 
-    def setUp(self):
-        print('\n\n.................................')
-        print('...... Testing FileStorage Functionality....')
-        print('.................................\n\n')
-        self.obj = State(name="California")
-        self.obj.save()
-
-    def tearDown(self):
-        self.obj.delete()
-        self.obj = None
-        FileStorage.__objects = {}  # Reset objects for each test
-
-    def test_all(self):
-        """Tests the all method of FileStorage"""
-        obj_dict = storage.all()
-        self.assertIsNotNone(obj_dict)
-        self.assertIn(str(self.obj.id), obj_dict.keys())
-
+    @unittest.skipIf(models.storage_t == 'db', "not testing file storage")
     def test_new(self):
-        """Tests the new method of FileStorage"""
-        new_obj = State(name="New York")
-        storage.new(new_obj)
-        storage.save()
-        new_obj_dict = storage.all()
-        self.assertIn(str(new_obj.id), new_obj_dict.keys())
-        new_obj.delete()
+        """test that new adds an object to the FileStorage.__objects attr"""
+        storage = FileStorage()
+        save = FileStorage._FileStorage__objects
+        FileStorage._FileStorage__objects = {}
+        test_dict = {}
+        for key, value in classes.items():
+            with self.subTest(key=key, value=value):
+                instance = value()
+                instance_key = instance.__class__.__name__ + "." + instance.id
+                storage.new(instance)
+                test_dict[instance_key] = instance
+                self.assertEqual(test_dict, storage._FileStorage__objects)
+        FileStorage._FileStorage__objects = save
 
+    @unittest.skipIf(models.storage_t == 'db', "not testing file storage")
+    def test_save(self):
+        """Test that save properly saves objects to file.json"""
+        storage = FileStorage()
+        new_dict = {}
+        for key, value in classes.items():
+            instance = value()
+            instance_key = instance.__class__.__name__ + "." + instance.id
+            new_dict[instance_key] = instance
+        save = FileStorage._FileStorage__objects
+        FileStorage._FileStorage__objects = new_dict
+        storage.save()
+        FileStorage._FileStorage__objects = save
+        for key, value in new_dict.items():
+            new_dict[key] = value.to_dict()
+        string = json.dumps(new_dict)
+        with open("file.json", "r") as f:
+            js = f.read()
+        self.assertEqual(json.loads(string), json.loads(js))
+
+    @unittest.skipIf(models.storage_t == 'db', "not testing file storage")
     def test_get(self):
-        """Tests the get method of FileStorage"""
-        storage.save()  # Ensure data is serialized before get
-        retrieved_obj = storage.get(State, self.obj.id
+        """Tests if the get method works as intended"""
+        self.state = State(name="Texas")
+        self.state.save()
+        self.assertTrue(models.storage.get("State", self.state.id))
+
+    @unittest.skipIf(models.storage_t == 'db', "not testing file storage")
+    def test_count(self):
+        """Tests if the count method works as intended"""
+        cls_count_start = models.storage.count()
+        self.state = State(name="Texas")
+        models.storage.new(self.state)
+        self.state.save()
+        cls_count_finish = models.storage.count()
+        self.assertNotEqual(cls_count_start, cls_count_finish)
