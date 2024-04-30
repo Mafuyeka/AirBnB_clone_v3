@@ -2,7 +2,7 @@
 """ Database engine """
 
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, scoped_session
 from models.base_model import Base
 from models import base_model, amenity, city, place, review, state, user
@@ -20,6 +20,7 @@ class DBStorage:
         'User': user.User
     }
 
+    """ handles storage for database """
     __engine = None
     __session = None
 
@@ -27,11 +28,10 @@ class DBStorage:
         """ creates the engine self.__engine """
         self.__engine = create_engine(
             'mysql+mysqldb://{}:{}@{}/{}'.format(
-                os.environ.get('HBNB_MYSQL_USER', 'hbnb_dev'),
-                os.environ.get('HBNB_MYSQL_PWD', 'hbnb_dev_pwd'),
-                os.environ.get('HBNB_MYSQL_HOST', 'localhost'),
-                os.environ.get('HBNB_MYSQL_DB', 'hbnb_dev_db')),
-            pool_pre_ping=True)
+                os.environ.get('HBNB_MYSQL_USER'),
+                os.environ.get('HBNB_MYSQL_PWD'),
+                os.environ.get('HBNB_MYSQL_HOST'),
+                os.environ.get('HBNB_MYSQL_DB')))
         if os.environ.get("HBNB_ENV") == 'test':
             Base.metadata.drop_all(self.__engine)
 
@@ -41,7 +41,7 @@ class DBStorage:
         if cls:
             obj_class = self.__session.query(self.CNC.get(cls)).all()
             for item in obj_class:
-                key = "{}.{}".format(cls, item.id)
+                key = str(item.__class__.__name__) + "." + str(item.id)
                 obj_dict[key] = item
             return obj_dict
         for class_name in self.CNC:
@@ -50,7 +50,7 @@ class DBStorage:
             obj_class = self.__session.query(
                 self.CNC.get(class_name)).all()
             for item in obj_class:
-                key = "{}.{}".format(class_name, item.id)
+                key = str(item.__class__.__name__) + "." + str(item.id)
                 obj_dict[key] = item
         return obj_dict
 
@@ -65,13 +65,7 @@ class DBStorage:
         :param id: id of object as string
         :return: found object or None
         """
-        all_class = self.all(cls)
-
-        for obj in all_class.values():
-            if id == str(obj.id):
-                return obj
-
-        return None
+        return self.__session.query(self.CNC.get(cls)).filter_by(id=id).first()
 
     def count(self, cls=None):
         """
@@ -79,7 +73,7 @@ class DBStorage:
         :param cls: class name
         :return: count of instances of a class
         """
-        return len(self.all(cls))
+        return self.__session.query(self.CNC.get(cls)).count()
 
     def save(self):
         """ commits all changes of current database session """
@@ -93,9 +87,10 @@ class DBStorage:
     def reload(self):
         """ creates all tables in database & session from engine """
         Base.metadata.create_all(self.__engine)
-        session_factory = sessionmaker(
-            bind=self.__engine, expire_on_commit=False)
-        self.__session = scoped_session(session_factory)
+        self.__session = scoped_session(
+            sessionmaker(
+                bind=self.__engine,
+                expire_on_commit=False))
 
     def close(self):
         """
